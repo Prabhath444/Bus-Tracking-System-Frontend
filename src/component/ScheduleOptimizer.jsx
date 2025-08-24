@@ -269,7 +269,7 @@ const ScheduleOptimizer = () => {
 
   // Function to open the modal for adding a new schedule
   const handleAddClick = () => {
-    setEditingSchedule(null); // Ensure we are in "add" mode
+    setEditingSchedule(null);
     setIsModalOpen(true);
   };
 
@@ -281,7 +281,7 @@ const ScheduleOptimizer = () => {
 
   const handleCloseModal = () => {
     setIsModalOpen(false);
-    setEditingSchedule(null); // Clear editing state on close
+    setEditingSchedule(null);
   };
 
   const handleSaveSuccess = () => {

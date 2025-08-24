@@ -1,6 +1,6 @@
 // src/component/BusPerformanceMonitor.jsx
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 
 /**
@@ -10,25 +10,100 @@ import { Link } from 'react-router-dom';
  * The layout is designed to be responsive across different screen sizes.
  */
 const BusPerformanceMonitor = () => {
-  // Mock data for bus performance - In a real application, this data would be fetched from an API.
-  const performanceData = [
-    { id: 1, busId: 'B001', performance: 'Excellent', route: 'Route A', avgSpeed: '45 mph', stopsMissed: 0, alerts: 'None', uptime: '99%', fuelEfficiency: 'Good' },
-    { id: 2, busId: 'B002', performance: 'Good', route: 'Route B', avgSpeed: '38 mph', stopsMissed: 1, alerts: 'Minor', uptime: '98%', fuelEfficiency: 'Average' },
-    { id: 3, busId: 'B003', performance: 'Average', route: 'Route C', avgSpeed: '30 mph', stopsMissed: 2, alerts: 'Medium', uptime: '95%', fuelEfficiency: 'Below Average' },
-    { id: 4, busId: 'B004', performance: 'Poor', route: 'Route D', avgSpeed: '25 mph', stopsMissed: 5, alerts: 'High', uptime: '90%', fuelEfficiency: 'Poor' },
-    { id: 5, busId: 'B005', performance: 'Good', route: 'Route E', avgSpeed: '40 mph', stopsMissed: 0, alerts: 'None', uptime: '99%', fuelEfficiency: 'Good' },
-    // Add more mock data as needed
-  ];
+  // State for performance reports, loading status, and errors
+  const [reports, setReports] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Fetch data when the component mounts
+  useEffect(() => {
+    const fetchPerformanceReports = async () => {
+      setIsLoading(true);
+      setError(null);
+      const token = sessionStorage.getItem("authToken");
+
+      if (!token) {
+        setError("Authentication token not found. Please log in.");
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        const response = await fetch("http://bus-tracking-system.test/api/performance-reports", {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP Error: ${response.status}`);
+        }
+
+        const data = await response.json();
+        setReports(data.data || []);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchPerformanceReports();
+  }, []); // Empty array ensures this runs only once on component mount
+
+  const renderTableContent = () => {
+    if (isLoading) {
+      return <div className="text-center p-8">Loading performance reports...</div>;
+    }
+
+    if (error) {
+      return <div className="text-center p-8 text-red-600">Error: {error}</div>;
+    }
+
+    if (reports.length === 0) {
+      return <div className="text-center p-8">No performance reports available.</div>;
+    }
+
+    return (
+      <div className="overflow-x-auto">
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gray-50">
+            <tr>
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bus (Plate Number)</th>
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Report Date</th>
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Avg Speed (kph)</th>
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stops Missed</th>
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Alerts Raised</th>
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Uptime</th>
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-200">
+            {reports.map((report) => (
+              <tr key={report.id}>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{report.bus.plateNumber}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{report.reportDate}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{report.averageSpeed}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{report.stopsMissed}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{report.alertsRaised}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{report.uptimePercent}%</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    );
+  };
 
   return (
     // Main container for the entire screen. Uses flexbox to arrange sidebar and main content.
     // Stacks vertically on mobile (flex-col), arranges horizontally on medium screens (md:flex-row).
     <div className="flex flex-col md:flex-row h-screen bg-gray-100 font-inter">
       {/*
-        Sidebar Navigation Area
-        Contains navigation links similar to Dashboard and other pages.
-        The 'Bus Performance Monitor' link is styled to appear active.
-      */}
+        Sidebar Navigation Area
+        Contains navigation links similar to Dashboard and other pages.
+        The 'Bus Performance Monitor' link is styled to appear active.
+      */}
       <aside className="w-full md:w-64 bg-white shadow-md p-4 mb-4 md:mb-0">
         <h1 className="text-2xl font-bold mb-6 text-gray-900">SLGPS</h1>
         <nav>
@@ -109,43 +184,7 @@ const BusPerformanceMonitor = () => {
 
         {/* Performance Data Table */}
         <div className="bg-white p-6 rounded-lg shadow-sm">
-          {/* Added overflow-x-auto to make the table horizontally scrollable on small screens */}
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bus ID</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Performance</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Route</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Avg Speed</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stops Missed</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Alerts</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Uptime</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fuel Efficiency</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {performanceData.map((bus) => (
-                  <tr key={bus.id}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{bus.busId}</td>
-                    <td className={`px-6 py-4 whitespace-nowrap text-sm font-medium ${
-                        bus.performance === 'Excellent' ? 'text-green-600' :
-                        bus.performance === 'Good' ? 'text-blue-600' :
-                        bus.performance === 'Average' ? 'text-yellow-600' : 'text-red-600'
-                    }`}>
-                        {bus.performance}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{bus.route}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{bus.avgSpeed}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{bus.stopsMissed}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{bus.alerts}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{bus.uptime}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{bus.fuelEfficiency}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          {renderTableContent()}
         </div>
       </div>
     </div>
