@@ -166,10 +166,10 @@ const UserManagement = () => {
             <ul>
               <li className="mb-2"><Link to="/dashboard" className="flex items-center p-2 text-gray-700 hover:bg-gray-200 rounded-md"><span className="mr-2">🏠</span> Dashboard</Link></li>
               <li className="mb-2"><Link to="/live-map" className="flex items-center p-2 text-gray-700 hover:bg-gray-200 rounded-md"><span className="mr-2">📍</span> Live Map</Link></li>
-              <li className="mb-2"><Link to="/bus-performance" className="flex items-center p-2 text-gray-700 hover:bg-gray-200 rounded-md"><span className="mr-2">🚌</span> Bus Performance</Link></li>
+              <li className="mb-2"><Link to="/bus-performance" className="flex items-center p-2 text-gray-700 hover:bg-gray-200 rounded-md"><span className="mr-2">🚌</span> Bus Performance Monitor</Link></li>
               <li className="mb-2"><Link to="/alerts" className="flex items-center p-2 text-gray-700 hover:bg-gray-200 rounded-md"><span className="mr-2">🚨</span> Alerts</Link></li>
               <li className="mb-2"><Link to="/schedule-optimizer" className="flex items-center p-2 text-gray-700 hover:bg-gray-200 rounded-md"><span className="mr-2">📅</span> Schedule Optimizer</Link></li>
-              <li className="mb-2"><Link to="/bus-driver-management" className="flex items-center p-2 text-gray-700 hover:bg-gray-200 rounded-md"><span className="mr-2">👥</span> Bus and Driver</Link></li>
+              <li className="mb-2"><Link to="/bus-driver-management" className="flex items-center p-2 text-gray-700 hover:bg-gray-200 rounded-md"><span className="mr-2">👥</span> Bus and Driver  Management</Link></li>
               <li className="mb-2"><Link to="/user-management" className="flex items-center p-2 text-blue-700 bg-blue-100 rounded-md"><span className="mr-2">👨‍💼</span> User Management</Link></li>
               <li className="mb-2"><Link to="/settings" className="flex items-center p-2 text-gray-700 hover:bg-gray-200 rounded-md"><span className="mr-2">⚙️</span> Setting</Link></li>
             </ul>
