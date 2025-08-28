@@ -90,9 +90,8 @@ const Settings = () => {
             Settings
           </h2>
           <div className="flex items-center space-x-2 sm:space-x-4">
-            <button className="text-gray-500 hover:text-gray-700 transition-colors duration-200">
-              <span className="text-2xl">🔔</span>
-            </button>
+            <Link to="/alerts" className="text-gray-500 hover:text-gray-700"><span className="text-2xl">🔔</span></Link>
+
             <button className="text-gray-500 hover:text-gray-700 transition-colors duration-200">
               <span className="text-2xl">👤</span>
             </button>
@@ -108,11 +107,10 @@ const Settings = () => {
               <span className="text-gray-700">Dark Mode</span>
               <button
                 onClick={() => setDarkMode(!darkMode)}
-                className={`px-4 py-2 rounded-md ${
-                  darkMode
+                className={`px-4 py-2 rounded-md ${darkMode
                     ? "bg-blue-600 text-white"
                     : "bg-gray-200 text-gray-800"
-                }`}
+                  }`}
               >
                 {darkMode ? "Enabled" : "Disabled"}
               </button>
@@ -126,11 +124,10 @@ const Settings = () => {
               <span className="text-gray-700">Enable Alerts</span>
               <button
                 onClick={() => setNotifications(!notifications)}
-                className={`px-4 py-2 rounded-md ${
-                  notifications
+                className={`px-4 py-2 rounded-md ${notifications
                     ? "bg-green-600 text-white"
                     : "bg-gray-200 text-gray-800"
-                }`}
+                  }`}
               >
                 {notifications ? "On" : "Off"}
               </button>

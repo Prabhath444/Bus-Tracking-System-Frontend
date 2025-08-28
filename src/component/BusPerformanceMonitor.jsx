@@ -163,8 +163,8 @@ const BusPerformanceMonitor = () => {
           <h2 className="text-3xl font-semibold text-gray-800 mb-2 sm:mb-0">Bus Performance Monitor</h2>
           {/* Top-right icons - Reduces spacing between icons on mobile */}
           <div className="flex items-center space-x-2 sm:space-x-4">
-            <button className="text-gray-500 hover:text-gray-700 transition-colors duration-200"><span className="text-2xl">⚙️</span></button>
-            <button className="text-gray-500 hover:text-gray-700 transition-colors duration-200"><span className="text-2xl">🔔</span></button>
+            <Link to="/settings" className="text-gray-500 hover:text-gray-700"><span className="text-2xl">⚙️</span></Link>
+            <Link to="/alerts" className="text-gray-500 hover:text-gray-700"><span className="text-2xl">🔔</span></Link>
             <button className="text-gray-500 hover:text-gray-700 transition-colors duration-200"><span className="text-2xl">👤</span></button>
           </div>
         </header>

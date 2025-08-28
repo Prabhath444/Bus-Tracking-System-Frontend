@@ -394,8 +394,8 @@ const ScheduleOptimizer = () => {
               Schedule Optimizer
             </h2>
             <div className="flex items-center space-x-2 sm:space-x-4">
-              <button className="text-gray-500 hover:text-gray-700 transition-colors duration-200"><span className="text-2xl">⚙️</span></button>
-              <button className="text-gray-500 hover:text-gray-700 transition-colors duration-200"><span className="text-2xl">🔔</span></button>
+              <Link to="/settings" className="text-gray-500 hover:text-gray-700"><span className="text-2xl">⚙️</span></Link>
+              <Link to="/alerts" className="text-gray-500 hover:text-gray-700"><span className="text-2xl">🔔</span></Link>
               <button className="text-gray-500 hover:text-gray-700 transition-colors duration-200"><span className="text-2xl">👤</span></button>
             </div>
           </header>

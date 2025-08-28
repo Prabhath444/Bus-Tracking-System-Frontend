@@ -1,172 +1,147 @@
-// src/component/Dashboard.jsx
+import React, { useState, useEffect, useCallback, useRef } from "react";
+import { Link, useNavigate } from "react-router-dom";
 
-import React from "react";
-import { Link } from "react-router-dom";
-import { useState, useEffect } from "react";
-import { BASE_URL, ENDPOINT_All_BUSES } from "../apiConfig.js"; // Adjust the path if needed
+// A reusable card component for the dashboard
+const StatCard = ({ title, value, icon, colorClass }) => (
+  <div className="bg-white p-6 rounded-lg shadow-sm flex items-center space-x-4">
+    <div className={`text-3xl p-3 rounded-full ${colorClass}`}>
+      {icon}
+    </div>
+    <div>
+      <h3 className="text-lg font-medium text-gray-600">{title}</h3>
+      <p className="text-4xl font-bold text-gray-900">{value}</p>
+    </div>
+  </div>
+);
 
-/**
- * Dashboard Component
- * This component displays the main dashboard overview with various data cards.
- * It includes a sidebar for navigation and a header with user-related icons.
- * The layout is designed to be responsive across different screen sizes.
- */
 function Dashboard() {
-  // State to store the bus data, loading status, and any errors
-
-  const [busData, setBusData] = useState(null);
+  const [dashboardData, setDashboardData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  // State to hold the counts of each bus category
-  const [counts, setCounts] = useState({
-    active: 0,
-    inactive: 0,
-    gpsOnline: 0,
-    gpsOffline: 0,
-  });
+
+  // State for the user profile dropdown
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
+  const profileRef = useRef(null);
+  const navigate = useNavigate();
+
+  const fetchDashboardData = useCallback(async () => {
+    // No need to set loading to true again on auto-refresh
+    if (!dashboardData) setIsLoading(true);
+    setError(null);
+
+    try {
+      const token = sessionStorage.getItem("authToken");
+      if (!token) {
+        throw new Error("No authentication token found. Please log in.");
+      }
+
+      const endpoint = "http://bus-tracking-system.test/api/dashboard";
+
+      const response = await fetch(endpoint, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      setDashboardData(result.data);
+    } catch (error) {
+      setError(error.message);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [dashboardData]);
 
   useEffect(() => {
-    // Asynchronous function to handle the data fetching
-    const fetchBusDetails = async () => {
-      try {
-        // Get the token from session storage
-        const token = sessionStorage.getItem("authToken");
-        if (!token) {
-          throw new Error("No authentication token found. Please log in.");
-        }
+    // Load user data from session storage on component mount
+    try {
+      const userString = sessionStorage.getItem('user');
+      if (userString) {
+        setCurrentUser(JSON.parse(userString));
+      }
+    } catch (e) {
+      console.error("Failed to parse user data from session storage", e);
+    }
 
-        // The API endpoint
-        const endpoint = `${BASE_URL}${ENDPOINT_All_BUSES}`;
+    fetchDashboardData();
+  }, [fetchDashboardData]);
 
-        const response = await fetch(endpoint, {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${token}`, // Include the token for authentication
-            "Content-Type": "application/json",
-          },
-        });
-
-        if (!response.ok) {
-          // Throw an error if the server response is not okay
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const data = await response.json();
-        setBusData(data); // Set the received data to the state
-
-        // Filter the data and update the counts state
-        setCounts({
-          active: data.data.filter((bus) => bus.status === "Active").length,
-          inactive: data.data.filter((bus) => bus.status === "Inactive").length,
-          gpsOnline: data.data.filter((bus) => bus.gpsStatus === "Online")
-            .length,
-          gpsOffline: data.data.filter((bus) => bus.gpsStatus === "Offline")
-            .length,
-        });
-      } catch (error) {
-        setError(error.message); // Set the error message to the state
-      } finally {
-        setIsLoading(false); // Always set loading to false when done
+  // Effect to close profile dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (profileRef.current && !profileRef.current.contains(event.target)) {
+        setIsProfileOpen(false);
       }
     };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
-    fetchBusDetails(); // Call the function when the component mounts
+  const handleLogout = () => {
+    sessionStorage.clear(); // Clear all session data
+    navigate('/');
+  };
 
-    // Set up the auto-refresh interval (every 60 seconds)
-    const intervalId = setInterval(fetchBusDetails, 60000);
-
-    // Cleanup function to clear the interval when the component unmounts
-    return () => clearInterval(intervalId);
-  }, []); // The empty dependency array ensures this effect runs only once
-
-  // Conditional rendering based on state
   if (isLoading) {
-    return <div>Loading bus details...</div>;
+    return <div className="flex justify-center items-center h-screen">Loading dashboard...</div>;
   }
 
   if (error) {
-    return <div>Error: {error}</div>;
+    return <div className="flex justify-center items-center h-screen text-red-500">Error: {error}</div>;
   }
 
   return (
     <div className="flex flex-col md:flex-row h-screen bg-gray-100 font-inter">
-      {/*
-        Sidebar Navigation Area
-        
-      */}
+      {/* Sidebar Navigation */}
       <aside className="w-full md:w-64 bg-white shadow-md p-4 mb-4 md:mb-0">
         <h1 className="text-2xl font-bold mb-6 text-gray-900">SLGPS</h1>
         <nav>
           <ul>
             <li className="mb-2">
-              {/* Dashboard Link (Active) - Dashboard link  */}
-              <Link
-                to="/dashboard"
-                className="flex items-center p-2 text-blue-700 bg-blue-100 rounded-md hover:bg-blue-200 transition-colors duration-200"
-              >
+              <Link to="/dashboard" className="flex items-center p-2 text-blue-700 bg-blue-100 rounded-md">
                 <span className="mr-2">🏠</span> Dashboard
               </Link>
             </li>
             <li className="mb-2">
-              {/* Live Map Link */}
-              <Link
-                to="/live-map"
-                className="flex items-center p-2 text-gray-700 hover:bg-gray-200 rounded-md transition-colors duration-200"
-              >
+              <Link to="/live-map" className="flex items-center p-2 text-gray-700 hover:bg-gray-200 rounded-md">
                 <span className="mr-2">📍</span> Live Map
               </Link>
             </li>
             <li className="mb-2">
-              {/* Bus Performance Monitor Link */}
-              <Link
-                to="/bus-performance"
-                className="flex items-center p-2 text-gray-700 hover:bg-gray-200 rounded-md transition-colors duration-200"
-              >
+              <Link to="/bus-performance" className="flex items-center p-2 text-gray-700 hover:bg-gray-200 rounded-md">
                 <span className="mr-2">🚌</span> Bus Performance Monitor
               </Link>
             </li>
             <li className="mb-2">
-              {/* Alerts Link */}
-              <Link
-                to="/alerts"
-                className="flex items-center p-2 text-gray-700 hover:bg-gray-200 rounded-md transition-colors duration-200"
-              >
+              <Link to="/alerts" className="flex items-center p-2 text-gray-700 hover:bg-gray-200 rounded-md">
                 <span className="mr-2">🚨</span> Alerts
               </Link>
             </li>
             <li className="mb-2">
-              {/* Schedule Optimizer Link */}
-              <Link
-                to="/schedule-optimizer"
-                className="flex items-center p-2 text-gray-700 hover:bg-gray-200 rounded-md transition-colors duration-200"
-              >
+              <Link to="/schedule-optimizer" className="flex items-center p-2 text-gray-700 hover:bg-gray-200 rounded-md">
                 <span className="mr-2">📅</span> Schedule Optimizer
               </Link>
             </li>
             <li className="mb-2">
-              {/* Bus and Driver Management Link */}
-              <Link
-                to="/bus-driver-management"
-                className="flex items-center p-2 text-gray-700 hover:bg-gray-200 rounded-md transition-colors duration-200"
-              >
+              <Link to="/bus-driver-management" className="flex items-center p-2 text-gray-700 hover:bg-gray-200 rounded-md">
                 <span className="mr-2">👥</span> Bus and Driver Management
               </Link>
             </li>
             <li className="mb-2">
-              {/* User Management Link */}
-              <Link
-                to="/user-management"
-                className="flex items-center p-2 text-gray-700 hover:bg-gray-200 rounded-md transition-colors duration-200"
-              >
+              <Link to="/user-management" className="flex items-center p-2 text-gray-700 hover:bg-gray-200 rounded-md">
                 <span className="mr-2">👨‍💼</span> User Management
               </Link>
             </li>
             <li className="mb-2">
-              {/* Setting Link */}
-              <Link
-                to="/settings"
-                className="flex items-center p-2 text-gray-700 hover:bg-gray-200 rounded-md transition-colors duration-200"
-              >
+              <Link to="/settings" className="flex items-center p-2 text-gray-700 hover:bg-gray-200 rounded-md">
                 <span className="mr-2">⚙️</span> Setting
               </Link>
             </li>
@@ -174,117 +149,53 @@ function Dashboard() {
         </nav>
       </aside>
 
+      {/* Main Content Area */}
       <div className="flex-1 p-4 md:p-8 overflow-y-auto">
-        {/* Header for the main content area (Page Title and top-right icons) */}
         <header className="flex flex-col sm:flex-row justify-between items-center mb-4 sm:mb-8">
-          {/* Page Title */}
           <h2 className="text-3xl font-semibold text-gray-800 mb-2 sm:mb-0">
-            Overview
+            Dashboard Overview
           </h2>
           <div className="flex items-center space-x-2 sm:space-x-4">
-            <button className="text-gray-500 hover:text-gray-700 transition-colors duration-200">
-              <span className="text-2xl">⚙️</span>
-            </button>
-            <button className="text-gray-500 hover:text-gray-700 transition-colors duration-200">
-              <span className="text-2xl">🔔</span>
-            </button>
-            <button className="text-gray-500 hover:text-gray-700 transition-colors duration-200">
-              <span className="text-2xl">👤</span>
-            </button>
+            <Link to="/settings" className="text-gray-500 hover:text-gray-700"><span className="text-2xl">⚙️</span></Link>
+            <Link to="/alerts" className="text-gray-500 hover:text-gray-700"><span className="text-2xl">🔔</span></Link>
+
+            <div className="relative" ref={profileRef}>
+              <button onClick={() => setIsProfileOpen(prev => !prev)} className="text-gray-500 hover:text-gray-700">
+                <span className="text-2xl">👤</span>
+              </button>
+              {isProfileOpen && (
+                <div className="absolute right-0 mt-2 w-64 bg-white rounded-md shadow-lg p-4 z-20 border">
+                  {currentUser ? (
+                    <div>
+                      <div className="border-b pb-2 mb-2">
+                        <p className="font-semibold text-gray-800">{currentUser.name}</p>
+                        <p className="text-sm text-gray-500">{currentUser.email}</p>
+                        <p className="text-xs text-gray-400 mt-1">User ID: {currentUser.id}</p>
+                      </div>
+                      <button
+                        onClick={handleLogout}
+                        className="w-full text-left px-2 py-1 text-sm text-red-600 hover:bg-red-50 rounded"
+                      >
+                        Logout
+                      </button>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-500">No user data found.</p>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         </header>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {/* Card 1: Total Buses */}
-          <div className="bg-white p-6 rounded-lg shadow-sm">
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
-              Total Buses
-            </h3>
-            {/* Active Buses data - */}
-            <p className="flex items-center justify-between text-gray-600 mb-1">
-              <span>Active Buses:</span>
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                {counts.active}
-              </span>
-            </p>
-            {/* Inactive Buses data - */}
-            <p className="flex items-center justify-between text-gray-600">
-              <span>Inactive Buses:</span>
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                {counts.inactive}
-              </span>
-            </p>
-            {/* More link - */}
-            <a
-              href="#"
-              className="text-teal-600 hover:text-teal-800 text-sm mt-4 block"
-            >
-              More
-            </a>
-          </div>
-
-          {/* Card 2: Buses Currently On Road */}
-          <div className="bg-white p-6 rounded-lg shadow-sm">
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
-              Buses Currently On Road
-            </h3>
-
-            <div className="text-5xl font-bold text-center text-green-700 my-4">
-              {counts.gpsOnline}
-            </div>
-            <a
-              href="#"
-              className="text-teal-600 hover:text-teal-800 text-sm mt-2 block"
-            >
-              More
-            </a>
-          </div>
-
-          {/* Card 3: Speed Alerts Today */}
-          <div className="bg-white p-6 rounded-lg shadow-sm">
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
-              Speed Alerts Today
-            </h3>
-
-            <div className="text-5xl font-bold text-center text-red-700 my-4"></div>
-            <a
-              href="#"
-              className="text-teal-600 hover:text-teal-800 text-sm mt-2 block"
-            >
-              More
-            </a>
-          </div>
-
-          {/* Card 4: Delayed Bus Count Today */}
-          <div className="bg-white p-6 rounded-lg shadow-sm">
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
-              Delayed Bus Count Today
-            </h3>
-
-            <div className="text-5xl font-bold text-center text-yellow-700 my-4"></div>
-            <a
-              href="#"
-              className="text-teal-600 hover:text-teal-800 text-sm mt-2 block"
-            >
-              More
-            </a>
-          </div>
-
-          {/* Card 5: Average Speed */}
-          <div className="bg-white p-6 rounded-lg shadow-sm">
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
-              Average Speed
-            </h3>
-
-            <div className="text-5xl font-bold text-center text-green-700 my-4"></div>
-            <a
-              href="#"
-              className="text-teal-600 hover:text-teal-800 text-sm mt-2 block"
-            >
-              More
-            </a>
-          </div>
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6">
+          <StatCard title="Total Buses" value={dashboardData?.totalBuses ?? 0} icon="🚌" colorClass="bg-blue-100 text-blue-600" />
+          <StatCard title="Online Buses" value={dashboardData?.onlineBuses ?? 0} icon="📡" colorClass="bg-green-100 text-green-600" />
+          <StatCard title="Active Alerts" value={dashboardData?.activeAlerts ?? 0} icon="🚨" colorClass="bg-red-100 text-red-600" />
+          <StatCard title="Total Drivers" value={dashboardData?.totalDrivers ?? 0} icon="👥" colorClass="bg-yellow-100 text-yellow-600" />
         </div>
+
       </div>
     </div>
   );
